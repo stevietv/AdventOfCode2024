@@ -17,6 +17,15 @@ while (reader.ReadLine() is { } line)
 leftList.Sort();
 rightList.Sort();
 
-var accumulator = leftList.Zip(rightList, (a, b) => Math.Abs(a - b)).Sum();
+var distanceAccumulator = leftList.Zip(rightList, (a, b) => Math.Abs(a - b)).Sum();
 
-Console.WriteLine(accumulator);
+Console.WriteLine($"Distance Score: {distanceAccumulator}");
+
+var similarityScore = 0;
+
+foreach (var item in leftList)
+{
+    similarityScore += item * rightList.FindAll(x => x == item).Count;
+}
+
+Console.WriteLine($"Similarity Score: {similarityScore}");
