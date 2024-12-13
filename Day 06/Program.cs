@@ -1,89 +1,129 @@
 ﻿namespace Day_06;
 
-class Program
+internal static class Program
 {
 
-    private static int currentX;
-    private static int currentY;
-    private static Direction direction;
-    private static List<Coordinate> map;
+    private static int _startingX;
+    private static int _startingY;
+    private static Direction _startingDirection;
+    private static List<Coordinate>? _startingMap;
 
     private const string Filename = "map.txt";
     
     private static void Main()
     {
-        map = ReadInput(Filename);
-        currentX = map.Find(coord => coord.Visited).X;
-        currentY = map.Find(coord => coord.Visited).Y;
+        _startingMap = ReadInput(Filename);
+        _startingX = _startingMap.Find(coord => coord.Visited)!.X;
+        _startingY = _startingMap.Find(coord => coord.Visited)!.Y;
 
-        Console.WriteLine($"Starting location is: ({currentX},{currentY})");
-        Console.WriteLine($"Amount if walls is: {map.Count(coord => coord.IsWall)}");
-        Console.WriteLine($"Starting direction is: {direction}");
+        Console.WriteLine($"Starting location is: ({_startingX},{_startingY})");
+        Console.WriteLine($"Amount if walls is: {_startingMap.Count(coord => coord.IsWall)}");
+        Console.WriteLine($"Starting direction is: {_startingDirection}");
 
-        ProcessMap();
+        var processedMap = ProcessMap(_startingMap.ToDictionary(coord => (coord.X, coord.Y)), _startingX, _startingY, _startingDirection);
 
-        Console.WriteLine($"Amount of visited squares: {map.Count(coord => coord.Visited)}");
+        if (processedMap != null) Console.WriteLine($"Amount of visited squares: {processedMap.Count(coord => coord.Visited)}");
+
+        var possibleLoops = CheckPossibleLoops(_startingMap, _startingX, _startingY, _startingDirection);
+        
+        Console.WriteLine($"Number of possible loop creating positions: {possibleLoops}");
     }
 
-    private static void ProcessMap()
+    private static List<Coordinate>? ProcessMap(Dictionary<(int, int), Coordinate> coordinateMap, int x, int y, Direction startDirection)
     {
-        Console.WriteLine("Processing Map movements");
-        var nextCoord = map.Find(coord => coord.X == currentX && coord.Y == currentY);
+        var direction = startDirection;
+        var visitedWalls = new HashSet<(int X, int Y, Direction ApproachDirection)>();
+        var nextCoord = coordinateMap.GetValueOrDefault((x, y));
 
         while (nextCoord != null)
         {
-            var currentLocation = map.Find(coord => coord.X == currentX && coord.Y == currentY);
-            if (currentLocation != null)
-                currentLocation.Visited = true;
+            if (!nextCoord.IsWall)
+                nextCoord.Visited = true;
             
             switch (direction)
             {
                 case Direction.North:
-                    nextCoord = map.Find(coord => coord.X == currentX && coord.Y == currentY - 1);
-
-                    if (nextCoord != null && nextCoord.IsWall)
-                        direction = Direction.East;
+                    nextCoord = coordinateMap.GetValueOrDefault((x, y - 1));
                     
+                    if (nextCoord is {IsWall: true})
+                    {
+                        if (!visitedWalls.Add((nextCoord.X, nextCoord.Y, direction)))
+                            return null;
+                        direction = Direction.East;
+                    }
+
                     else if (nextCoord != null)
-                        currentY--;
+                        y--;
 
                     break;
                 
                 case Direction.West:
-                    nextCoord = map.Find(coord => coord.X == currentX -1 && coord.Y == currentY);
+                    nextCoord = coordinateMap.GetValueOrDefault((x - 1, y));
                     
-                    if (nextCoord != null && nextCoord.IsWall)
+                    if (nextCoord is {IsWall: true})
+                    {
+                        if (!visitedWalls.Add((nextCoord.X, nextCoord.Y, direction)))
+                            return null;
                         direction = Direction.North;
-                    
+                    }
+
                     else if (nextCoord != null)
-                        currentX--;
+                        x--;
 
                     break;
                 
                 case Direction.South:
-                    nextCoord = map.Find(coord => coord.X == currentX && coord.Y == currentY + 1);
+                    nextCoord = coordinateMap.GetValueOrDefault((x, y + 1));
                     
-                    if (nextCoord != null && nextCoord.IsWall)
+                    if (nextCoord is {IsWall: true})
+                    {
+                        if (!visitedWalls.Add((nextCoord.X, nextCoord.Y, direction)))
+                            return null;
                         direction = Direction.West;
-                    
+                    }
+
                     else if (nextCoord != null)
-                        currentY++;
+                        y++;
 
                     break;            
                 
                 case Direction.East:
-                    nextCoord = map.Find(coord => coord.X == currentX + 1 && coord.Y == currentY);
+                    nextCoord = coordinateMap.GetValueOrDefault((x + 1, y));
                     
-                    if (nextCoord != null && nextCoord.IsWall)
+                    if (nextCoord is {IsWall: true})
+                    {
+                        if (!visitedWalls.Add((nextCoord.X, nextCoord.Y, direction)))
+                            return null;
                         direction = Direction.South;
-                    
+                    }
+
                     else if (nextCoord != null)
-                        currentX++;
+                        x++;
 
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
-        Console.WriteLine("Exited Map");
+
+        return coordinateMap.Values.ToList();
+    }
+
+    private static int CheckPossibleLoops(List<Coordinate> inputMap, int x, int y, Direction startDirection)
+    {
+        var coordinateMap = inputMap.ToDictionary(coord => (coord.X, coord.Y));
+        var numberOfPossibleLoops = 0;
+        foreach (var coordinate in coordinateMap.Values.Where(coord => !coord.IsWall))
+        {
+            coordinate.IsWall = true;
+
+            if (ProcessMap(coordinateMap, x, y, startDirection) == null)
+                numberOfPossibleLoops++;
+
+            coordinate.IsWall = false;
+        }
+
+        return numberOfPossibleLoops;
     }
 
     private static List<Coordinate> ReadInput(string input)
@@ -110,16 +150,16 @@ class Program
             }
 
             if (line.Contains('^'))
-                direction = Direction.North;
+                _startingDirection = Direction.North;
             
             if (line.Contains('>'))
-                direction = Direction.East;
+                _startingDirection = Direction.East;
             
             if (line.Contains('<'))
-                direction = Direction.West;
+                _startingDirection = Direction.West;
             
             if (line.Contains('v'))
-                direction = Direction.South;
+                _startingDirection = Direction.South;
             
             y++;
         }
