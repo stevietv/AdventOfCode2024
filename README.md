@@ -12,7 +12,7 @@ This repo contains my solutions for the [Advent of Code 2024](https://adventofco
 | 04  |  :heavy_check_mark:   | :heavy_check_mark:  |
 | 05  |  :heavy_check_mark:   | :heavy_check_mark:  |
 | 06  |  :heavy_check_mark:   | :heavy_check_mark:  |
-| 07  |    |                     |
+| 07  |  :heavy_check_mark:   | :heavy_check_mark:  |
 | 08  |    |                     |
 | 09  |    |                     |
 | 10  |    |                     |
